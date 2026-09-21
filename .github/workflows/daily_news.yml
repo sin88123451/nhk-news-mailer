@@ -1,4 +1,4 @@
-name: NHK Daily News Mailer
+name: Yahoo News Daily Mailer
 
 on:
   schedule:
@@ -21,9 +21,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Send NHK news email
+      - name: Send Yahoo News email
         env:
           GMAIL_USER:       ${{ secrets.GMAIL_USER }}
           GMAIL_PASSWORD:   ${{ secrets.GMAIL_PASSWORD }}
           RECIPIENT_EMAIL:  ${{ secrets.RECIPIENT_EMAIL }}
-        run: python nhk_news_mailer.py
+        run: python yahoo_news_mailer.py
