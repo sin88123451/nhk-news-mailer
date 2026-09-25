@@ -5,17 +5,16 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime
 
-# ─── Google ニュース（日本語）──────────────────────────────────────────────
-# NHK 公式 RSS が 2026/08/08 以降更新停止のため Google News トピック別に切替
-NHK_COLOR = "#1a73e8"
-NHK_CATEGORIES = [
-    ("トップ",         "https://news.google.com/rss?hl=ja&gl=JP&ceid=JP:ja"),
-    ("国内",           "https://news.google.com/rss/headlines/section/topic/NATION?hl=ja&gl=JP&ceid=JP:ja"),
-    ("国際",           "https://news.google.com/rss/headlines/section/topic/WORLD?hl=ja&gl=JP&ceid=JP:ja"),
-    ("経済",           "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=ja&gl=JP&ceid=JP:ja"),
-    ("テクノロジー",   "https://news.google.com/rss/headlines/section/topic/TECHNOLOGY?hl=ja&gl=JP&ceid=JP:ja"),
-    ("科学",           "https://news.google.com/rss/headlines/section/topic/SCIENCE?hl=ja&gl=JP&ceid=JP:ja"),
-    ("スポーツ",       "https://news.google.com/rss/headlines/section/topic/SPORTS?hl=ja&gl=JP&ceid=JP:ja"),
+# ─── Google ニュース（日本語トピック別）────────────────────────────────────
+GOOGLE_COLOR = "#1a73e8"
+GOOGLE_CATEGORIES = [
+    ("トップ",       "https://news.google.com/rss?hl=ja&gl=JP&ceid=JP:ja"),
+    ("国内",         "https://news.google.com/rss/headlines/section/topic/NATION?hl=ja&gl=JP&ceid=JP:ja"),
+    ("国際",         "https://news.google.com/rss/headlines/section/topic/WORLD?hl=ja&gl=JP&ceid=JP:ja"),
+    ("経済",         "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=ja&gl=JP&ceid=JP:ja"),
+    ("テクノロジー", "https://news.google.com/rss/headlines/section/topic/TECHNOLOGY?hl=ja&gl=JP&ceid=JP:ja"),
+    ("科学",         "https://news.google.com/rss/headlines/section/topic/SCIENCE?hl=ja&gl=JP&ceid=JP:ja"),
+    ("スポーツ",     "https://news.google.com/rss/headlines/section/topic/SPORTS?hl=ja&gl=JP&ceid=JP:ja"),
 ]
 
 # ─── Yahoo!ニュース ──────────────────────────────────────────────────────────
@@ -28,6 +27,20 @@ YAHOO_CATEGORIES = [
     ("IT・科学", "https://news.yahoo.co.jp/rss/topics/it.xml"),
     ("スポーツ", "https://news.yahoo.co.jp/rss/topics/sports.xml"),
     ("エンタメ", "https://news.yahoo.co.jp/rss/topics/entertainment.xml"),
+]
+
+# ─── NHK NEWS WEB（Google News site: フィルター経由）──────────────────────
+# 公式 RSS が 2026/08/08 以降更新停止のため代替
+NHK_COLOR = "#003f88"
+_NHK = "https://news.google.com/rss/search?hl=ja&gl=JP&ceid=JP:ja&q=site:nhk.or.jp+ニュース"
+NHK_CATEGORIES = [
+    ("主要",     _NHK),
+    ("政治",     _NHK + "+政治"),
+    ("経済",     _NHK + "+経済"),
+    ("国際",     _NHK + "+国際"),
+    ("社会",     _NHK + "+社会"),
+    ("スポーツ", _NHK + "+スポーツ"),
+    ("科学",     _NHK + "+科学"),
 ]
 
 SENDER    = os.environ["GMAIL_USER"]
@@ -76,23 +89,25 @@ def build_media_header(label, color):
         </tr>"""
 
 
-def build_html(nhk_sections, yahoo_sections):
+def build_html(google_sections, yahoo_sections, nhk_sections):
     today = datetime.now().strftime("%Y年%m月%d日")
     rows = ""
 
-    # Google ニュース ブロック
-    rows += build_media_header("Google ニュース（日本語）", NHK_COLOR)
-    for cat_name, items in nhk_sections:
-        rows += build_section(f"NHK {cat_name}", NHK_COLOR, items)
+    rows += build_media_header("Google ニュース（日本語）", GOOGLE_COLOR)
+    for cat_name, items in google_sections:
+        rows += build_section(f"Google {cat_name}", GOOGLE_COLOR, items)
 
-    # 区切り
-    rows += """
-        <tr><td colspan="2" style="padding:8px;"></td></tr>"""
+    rows += """<tr><td colspan="2" style="padding:8px;"></td></tr>"""
 
-    # Yahoo! ブロック
     rows += build_media_header("Yahoo!ニュース", YAHOO_COLOR)
     for cat_name, items in yahoo_sections:
         rows += build_section(f"Yahoo! {cat_name}", YAHOO_COLOR, items)
+
+    rows += """<tr><td colspan="2" style="padding:8px;"></td></tr>"""
+
+    rows += build_media_header("NHK NEWS WEB", NHK_COLOR)
+    for cat_name, items in nhk_sections:
+        rows += build_section(f"NHK {cat_name}", NHK_COLOR, items)
 
     return f"""<!DOCTYPE html>
 <html lang="ja">
@@ -104,13 +119,13 @@ def build_html(nhk_sections, yahoo_sections):
     <tr>
       <td colspan="2" style="background:#222;padding:20px 24px;">
         <div style="color:#fff;font-size:22px;font-weight:bold;">朝の国内ニュース</div>
-        <div style="color:#aaa;font-size:13px;margin-top:4px;">{today} 朝6時版　Google ニュース + Yahoo!</div>
+        <div style="color:#aaa;font-size:13px;margin-top:4px;">{today} 朝6時版　Google + Yahoo! + NHK</div>
       </td>
     </tr>
     {rows}
     <tr>
       <td colspan="2" style="padding:14px 16px;font-size:12px;color:#aaa;text-align:center;">
-        出典：Google ニュース RSS / Yahoo!ニュース RSS / 自動配信
+        出典：Google ニュース / Yahoo!ニュース / NHK NEWS WEB RSS / 自動配信
       </td>
     </tr>
   </table>
@@ -130,9 +145,9 @@ def send_email(subject, html_body):
 
 
 def main():
-    nhk_sections = [
+    google_sections = [
         (name, items)
-        for name, url in NHK_CATEGORIES
+        for name, url in GOOGLE_CATEGORIES
         if (items := fetch_news(url))
     ]
     yahoo_sections = [
@@ -140,14 +155,19 @@ def main():
         for name, url in YAHOO_CATEGORIES
         if (items := fetch_news(url))
     ]
+    nhk_sections = [
+        (name, items)
+        for name, url in NHK_CATEGORIES
+        if (items := fetch_news(url))
+    ]
 
-    if not nhk_sections and not yahoo_sections:
+    if not google_sections and not yahoo_sections and not nhk_sections:
         print("ニュース取得なし")
         return
 
     today   = datetime.now().strftime("%Y/%m/%d")
-    subject = f"【朝刊】{today} Googleニュース＋Yahoo!ニュース"
-    html    = build_html(nhk_sections, yahoo_sections)
+    subject = f"【朝刊】{today} Google＋Yahoo!＋NHK"
+    html    = build_html(google_sections, yahoo_sections, nhk_sections)
     send_email(subject, html)
     print(f"送信完了: {subject}")
 
