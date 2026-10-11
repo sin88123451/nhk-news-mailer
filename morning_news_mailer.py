@@ -31,8 +31,9 @@ YAHOO_CATEGORIES = [
 
 # ─── NHK NEWS WEB（Google News site: フィルター経由）──────────────────────
 # 公式 RSS が 2026/08/08 以降更新停止のため代替
+# 「+ニュース」は NHK 歴史アーカイブページにヒットするため「+速報」に変更
 NHK_COLOR = "#003f88"
-_NHK = "https://news.google.com/rss/search?hl=ja&gl=JP&ceid=JP:ja&q=site:nhk.or.jp+ニュース"
+_NHK = "https://news.google.com/rss/search?hl=ja&gl=JP&ceid=JP:ja&q=site:nhk.or.jp+速報"
 NHK_CATEGORIES = [
     ("主要",     _NHK),
     ("政治",     _NHK + "+政治"),
@@ -49,15 +50,20 @@ RECIPIENT = os.environ["RECIPIENT_EMAIL"]
 TOP_N     = 5
 
 
+_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
+
 def fetch_news(url, n=TOP_N):
-    feed = feedparser.parse(url)
+    feed = feedparser.parse(url, request_headers={"User-Agent": _UA})
+    entries = feed.entries[:n]
+    print(f"  fetch {url[:80]} → {len(entries)} 件")
     return [
         {
             "title":   entry.get("title", ""),
             "summary": entry.get("summary", ""),
             "link":    entry.get("link", ""),
         }
-        for entry in feed.entries[:n]
+        for entry in entries
     ]
 
 
