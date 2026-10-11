@@ -68,17 +68,18 @@ def fetch_news(url, n=TOP_N):
 
 
 def fetch_nhk_news(url, n=TOP_N):
-    """NHK 専用: /news/ パスを含む記事のみ取得（番組表・トップページ等を除外）"""
+    """NHK 専用: タイトルが「- NHKニュース」で終わる記事のみ取得
+    （番組表・トップページ等は「- NHK」のみで終わるため除外される）"""
     feed = feedparser.parse(url, request_headers={"User-Agent": _UA})
     items = []
     for entry in feed.entries:
-        link = entry.get("link", "")
-        if "/news/" not in link:
+        title = entry.get("title", "")
+        if "NHKニュース" not in title:
             continue
         items.append({
-            "title":   entry.get("title", ""),
+            "title":   title,
             "summary": entry.get("summary", ""),
-            "link":    link,
+            "link":    entry.get("link", ""),
         })
         if len(items) >= n:
             break
