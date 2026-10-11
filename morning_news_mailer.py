@@ -31,9 +31,9 @@ YAHOO_CATEGORIES = [
 
 # ─── NHK NEWS WEB（Google News site: フィルター経由）──────────────────────
 # 公式 RSS が 2026/08/08 以降更新停止のため代替
-# 「+ニュース」は NHK 歴史アーカイブページにヒットするため「+速報」に変更
+# Python 側で URL に /news/ を含む記事のみに絞り込む（番組表・トップ等を除外）
 NHK_COLOR = "#003f88"
-_NHK = "https://news.google.com/rss/search?hl=ja&gl=JP&ceid=JP:ja&q=site:nhk.or.jp+速報"
+_NHK = "https://news.google.com/rss/search?hl=ja&gl=JP&ceid=JP:ja&q=site:nhk.or.jp"
 NHK_CATEGORIES = [
     ("主要",     _NHK),
     ("政治",     _NHK + "+政治"),
@@ -65,6 +65,25 @@ def fetch_news(url, n=TOP_N):
         }
         for entry in entries
     ]
+
+
+def fetch_nhk_news(url, n=TOP_N):
+    """NHK 専用: /news/ パスを含む記事のみ取得（番組表・トップページ等を除外）"""
+    feed = feedparser.parse(url, request_headers={"User-Agent": _UA})
+    items = []
+    for entry in feed.entries:
+        link = entry.get("link", "")
+        if "/news/" not in link:
+            continue
+        items.append({
+            "title":   entry.get("title", ""),
+            "summary": entry.get("summary", ""),
+            "link":    link,
+        })
+        if len(items) >= n:
+            break
+    print(f"  fetch(NHK) {url[:80]} → {len(items)} 件")
+    return items
 
 
 def build_section(label, color, items):
@@ -164,7 +183,7 @@ def main():
     nhk_sections = [
         (name, items)
         for name, url in NHK_CATEGORIES
-        if (items := fetch_news(url))
+        if (items := fetch_nhk_news(url))
     ]
 
     if not google_sections and not yahoo_sections and not nhk_sections:
